@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { margin: 0; background: #fdf6f7; overflow: hidden; touch-action: none; font-family: sans-serif; }
+        #ui { position: absolute; top: 20px; width: 100%; text-align: center; color: #b2ffc8; font-size: 28px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); pointer-events: none; }
+        /* Cambiamos el color de la palanca */
+        .nipple { background: rgba(178, 255, 200, 0.8) !important; border: 2px solid #90e0a5 !important; }
+        .front { background: #90e0a5 !important; }
+    </style>
+</head>
+<body>
+    <div id="ui">Corazones: <span id="score">0</span></div>
+    <div id="joystick" style="position: fixed; bottom: 50px; left: 50px;"></div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.0/nipplejs.min.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let player = { x: 100, y: 100, size: 30 };
+        let hearts = Array.from({length: 8}, () => ({ 
+            x: Math.random() * (canvas.width - 60) + 30, 
+            y: Math.random() * (canvas.height - 60) + 30 
+        }));
+
+        // Joystick color pastel
+        const manager = nipplejs.create({ 
+            zone: document.getElementById('joystick'), 
+            mode: 'static', 
+            position: { left: '80px', bottom: '80px' },
+            color: '#b2ffc8'
+        });
+        
+        let moveVec = { x: 0, y: 0 };
+        manager.on('move', (e, d) => { moveVec = d.vector; });
+        manager.on('end', () => { moveVec = { x: 0, y: 0 }; });
+
+        // Función para dibujar un corazón real
+        function drawHeart(x, y, size) {
+            ctx.fillStyle = "#ff6b81";
+            ctx.beginPath();
+            ctx.moveTo(x, y + size / 4);
+            ctx.quadraticCurveTo(x, y, x + size / 4, y);
+            ctx.quadraticCurveTo(x + size / 2, y, x + size / 2, y + size / 4);
+            ctx.quadraticCurveTo(x + size / 2, y, x + 3 * size / 4, y);
+            ctx.quadraticCurveTo(x + size, y, x + size, y + size / 4);
+            ctx.quadraticCurveTo(x + size, y + size / 2, x + size / 2, y + size);
+            ctx.quadraticCurveTo(x, y + size / 2, x, y + size / 4);
+            ctx.fill();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujar corazones
+            hearts.forEach(h => drawHeart(h.x - 15, h.y - 15, 30));
+
+            // Dibujar personaje (Verde pastel)
+            ctx.fillStyle = "#b2ffc8";
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Carita :3
+            ctx.fillStyle = "#7ad493"; // Verde un poco más oscuro para la cara
+            // Ojos
+            ctx.beginPath();
+            ctx.arc(player.x - 10, player.y - 5, 4, 0, Math.PI * 2);
+            ctx.arc(player.x + 10, player.y - 5, 4, 0, Math.PI * 2);
+            ctx.fill();
+            // Boca :3
+            ctx.beginPath();
+            ctx.moveTo(player.x - 8, player.y + 5);
+            ctx.quadraticCurveTo(player.x, player.y + 12, player.x + 8, player.y + 5);
+            ctx.stroke();
+
+            // Movimiento
+            player.x += moveVec.x * 5;
+            player.y += moveVec.y * 5;
+
+            // Colisiones
+            hearts = hearts.filter(h => {
+                let dist = Math.hypot(player.x - h.x, player.y - h.y);
+                if (dist < 40) {
+                    document.getElementById('score').innerText = parseInt(document.getElementById('score').innerText) + 1;
+                    return false;
+                }
+                return true;
+            });
+
+            requestAnimationFrame(draw);
+        }
+        draw();
+    </script>
+</body>
+</html>
