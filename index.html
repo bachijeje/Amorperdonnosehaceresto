@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { margin: 0; background: #fdf6f7; overflow: hidden; touch-action: none; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 10px; width: 100%; text-align: center; color: #d63384; font-size: 24px; pointer-events: none; }
+        #joystick { position: fixed; bottom: 50px; left: 50px; }
+    </style>
+</head>
+<body>
+    <div id="ui">Corazones: <span id="score">0</span></div>
+    <div id="joystick"></div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.0/nipplejs.min.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let player = { x: 100, y: 100, size: 30 };
+        let hearts = Array.from({length: 8}, () => ({ 
+            x: Math.random() * (canvas.width - 40), 
+            y: Math.random() * (canvas.height - 40) 
+        }));
+
+        // Joystick
+        const manager = nipplejs.create({ zone: document.getElementById('joystick'), mode: 'static', position: { left: '80px', bottom: '80px' } });
+        let moveVec = { x: 0, y: 0 };
+        manager.on('move', (e, d) => { moveVec = d.vector; });
+        manager.on('end', () => { moveVec = { x: 0, y: 0 }; });
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujar corazones
+            ctx.fillStyle = "#ff6b81";
+            hearts.forEach(h => {
+                ctx.beginPath();
+                ctx.arc(h.x, h.y, 15, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Dibujar personaje (el círculo con carita)
+            ctx.fillStyle = "#ffb7b2";
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+            ctx.fill();
+            // Carita
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(player.x - 10, player.y - 5, 5, 0, Math.PI * 2); // Ojo 1
+            ctx.arc(player.x + 10, player.y - 5, 5, 0, Math.PI * 2); // Ojo 2
+            ctx.fill();
+
+            // Mover personaje
+            player.x += moveVec.x * 5;
+            player.y += moveVec.y * 5;
+
+            // Colisiones
+            hearts = hearts.filter(h => {
+                let dist = Math.hypot(player.x - h.x, player.y - h.y);
+                if (dist < 40) {
+                    document.getElementById('score').innerText = parseInt(document.getElementById('score').innerText) + 1;
+                    return false;
+                }
+                return true;
+            });
+
+            requestAnimationFrame(draw);
+        }
+        draw();
+    </script>
+</body>
+</html>
